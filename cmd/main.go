@@ -38,7 +38,7 @@ func main() {
 	go game.Run()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		t, err := template.ParseFiles("./views/index.html")
+		t, err := template.ParseFiles("../views/index.html")
 		if err != nil {
 			log.Fatal(err)
 		}

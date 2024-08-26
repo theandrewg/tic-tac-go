@@ -23,7 +23,7 @@ func NewGame() *Game {
 }
 
 func (g *Game) updateState() {
-	t, err := template.ParseFiles("./views/index.html")
+	t, err := template.ParseFiles("../views/index.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,12 +53,16 @@ func (g *Game) Run() {
 		select {
 		// register a new player
 		case p := <-g.Register:
-			if len(g.Players) == 2 {
+			if p == nil {
+				log.Panic("unable to register nil player")
+			}
+			if len(g.Players) >= 2 {
 				// only two players are allowed to register
 				close(p.Send)
+			} else {
+				g.Players[p] = true
+				g.updateState()
 			}
-			g.Players[p] = true
-			g.updateState()
 
 		// unregister a player
 		case p := <-g.Unregister:

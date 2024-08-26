@@ -80,7 +80,7 @@ readLoop:
 		case Unknown:
 			p.Send <- []byte("unknown type")
 		case Close:
-			t, err := template.ParseFiles("./views/index.html")
+			t, err := template.ParseFiles("../views/index.html")
 			if err != nil {
 				log.Fatal(err)
 			}
