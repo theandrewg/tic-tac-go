@@ -60,6 +60,7 @@ func main() {
 		}
 
 		err = t.ExecuteTemplate(w, "connected-game", nil)
+		err = t.ExecuteTemplate(w, "game-err", nil)
 		if err != nil {
 			log.Fatal(err)
 		}

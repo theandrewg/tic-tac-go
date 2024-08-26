@@ -58,6 +58,25 @@ func (g *Game) Run() {
 			}
 			if len(g.Players) >= 2 {
 				// only two players are allowed to register
+				t, err := template.ParseFiles("../views/index.html")
+				if err != nil {
+					log.Fatal(err)
+				}
+
+                data := struct {
+                    Error string
+                }{
+                    Error: "Game is full",
+                }
+
+				var buf bytes.Buffer
+				err = t.ExecuteTemplate(&buf, "disconnected-game", nil)
+                err = t.ExecuteTemplate(&buf, "game-err", data)
+				if err != nil {
+					log.Fatal(err)
+				}
+				p.Send <- buf.Bytes()
+
 				close(p.Send)
 			} else {
 				g.Players[p] = true

@@ -6,6 +6,7 @@
     <body>
         Hello
         <br>
+        {{ template "game-err" .}}
         {{ template "disconnected-game" .}}
     </body>
 </html>
@@ -49,5 +50,11 @@
 {{ block "counter" .}}
 <div id='counter' hx-swap-oob='true'>
     {{.Count}}
+</div>
+{{ end }}
+
+{{ block "game-err" .}}
+<div id='game-err' hx-swap-oob='true'>
+    {{ .Error }}
 </div>
 {{ end }}
