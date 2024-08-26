@@ -1,0 +1,150 @@
+package tictacgo
+
+import (
+	"bytes"
+	"encoding/json"
+	"html/template"
+	"log"
+	"time"
+
+	"github.com/gorilla/websocket"
+)
+
+const (
+	// message read timer
+	readWait = 60 * time.Second
+
+	// message write timer
+	writeWait = 10 * time.Second
+
+	// client ping frequency
+	// must be less than readWait
+	pingFreq = readWait * 9 / 10
+
+	// max client sent message size
+	msgLimit = 1024
+)
+
+const (
+	Unknown int = iota
+	Close
+)
+
+var (
+	newLine = []byte{'\n'}
+	space   = []byte{' '}
+)
+
+type Player struct {
+	Game *Game
+	Conn *websocket.Conn
+	Send chan []byte
+}
+
+type ClientMessage struct {
+	Type int
+}
+
+func (p *Player) ReadMessages() {
+	defer func() {
+		p.Game.Unregister <- p
+	}()
+
+	p.Conn.SetReadLimit(msgLimit)
+	p.Conn.SetReadDeadline(time.Now().Add(readWait))
+	p.Conn.SetPongHandler(func(string) error {
+		p.Conn.SetReadDeadline(time.Now().Add(readWait))
+		return nil
+	})
+
+readLoop:
+	for {
+		_, msgBytes, err := p.Conn.ReadMessage()
+		if err != nil {
+			log.Print(err)
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("error: %v", err)
+			}
+			break
+		}
+		var msg ClientMessage
+
+		err = json.Unmarshal(msgBytes, &msg)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		switch msg.Type {
+		default:
+		case Unknown:
+			p.Send <- []byte("unknown type")
+		case Close:
+			t, err := template.ParseFiles("../views/index.html")
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			data := struct {
+				Count int
+			}{
+				Count: len(p.Game.Players),
+			}
+
+			var buf bytes.Buffer
+
+			err = t.ExecuteTemplate(&buf, "disconnected-game", data)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			b := buf.Bytes()
+			p.Send <- b
+			break readLoop
+		}
+	}
+}
+
+func (p *Player) WriteMessages() {
+	ticker := time.NewTicker(pingFreq)
+	defer func() {
+		ticker.Stop()
+		p.Game.Unregister <- p
+	}()
+
+	for {
+		select {
+		case msg, ok := <-p.Send:
+			p.Conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if !ok {
+				p.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			w, err := p.Conn.NextWriter(websocket.TextMessage)
+			if err != nil {
+				return
+			}
+
+			w.Write(msg)
+
+			n := len(p.Send)
+			for i := 0; i < n; i++ {
+				w.Write(newLine)
+				w.Write(<-p.Send)
+			}
+
+			err = w.Close()
+			if err != nil {
+				return
+			}
+		case <-ticker.C:
+			p.Conn.SetWriteDeadline(time.Now().Add(writeWait))
+			err := p.Conn.WriteMessage(websocket.PingMessage, nil)
+			if err != nil {
+				return
+			}
+		}
+	}
+}

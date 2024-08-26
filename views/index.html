@@ -1,0 +1,53 @@
+{{ block "index" .}}
+<!DOCTYPE html>
+<html lang='en'>
+    <script src='https://unpkg.com/htmx.org@2.0.2' integrity='sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ' crossorigin='anonymous'></script>
+    <script src='https://unpkg.com/htmx-ext-ws@2.0.1/ws.js'></script>
+    <body>
+        Hello
+        <br>
+        {{ template "disconnected-game" .}}
+    </body>
+</html>
+{{ end }}
+
+{{ block "connect" .}}
+<button
+    id='connect'
+    hx-trigger='click'
+    hx-swap='outerHTML'
+    hx-get='/connect'
+    >
+    Connect
+</button>
+{{ end }}
+
+{{ block "disconnect" .}}
+<button
+    id='connect'
+    hx-trigger='mousedown'
+    hx-vals='{"type": 1}'
+    ws-send
+    >
+    Disconnect
+</button>
+{{ end }}
+
+{{ block "disconnected-game" .}}
+<div id='game'>
+    {{ template "connect" .}}
+</div>
+{{ end }}
+
+{{ block "connected-game" .}}
+<div id='game' hx-ext='ws' ws-connect='/game' hx-swap-oob='true'>
+    {{ template "counter" .}}
+    {{ template "disconnect" .}}
+</div>
+{{ end }}
+
+{{ block "counter" .}}
+<div id='counter' hx-swap-oob='true'>
+    {{.Count}}
+</div>
+{{ end }}
