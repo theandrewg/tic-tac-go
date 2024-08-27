@@ -54,7 +54,7 @@
 {{ end }}
 
 {{ block "box" .}}
-<div id='g{{.Id}}' class='box' hx-trigger='mousedown' hx-vals='{"type": 2, "box": {{.Id}}, "player": 1}' ws-send>
+<div id='g{{.Id}}' class='box' {{if .Player }}{{else}}hx-trigger='mousedown' hx-vals='{"type": 2, "box": {{.Id}}, "player": 1}' ws-send{{end}} >
     {{.Player}}
 </div>
 {{ end }}

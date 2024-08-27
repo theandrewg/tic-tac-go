@@ -92,7 +92,7 @@ readLoop:
 				log.Fatal(err)
 			}
 
-			p.Game.Boxes[s.Box].Player = s.Box + 1
+			p.Game.Boxes[s.Box].Player = p.Game.Boxes[s.Box].Player + 1
 
 			t, err := template.ParseFiles("../views/index.html")
 			if err != nil {
