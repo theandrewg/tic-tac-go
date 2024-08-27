@@ -11,6 +11,7 @@ type Game struct {
 	Broadcast  chan []byte
 	Register   chan *Player
 	Unregister chan *Player
+	Boxes      [9]Box
 }
 
 func NewGame() *Game {
@@ -19,7 +20,22 @@ func NewGame() *Game {
 		Broadcast:  make(chan []byte),
 		Register:   make(chan *Player),
 		Unregister: make(chan *Player),
+		Boxes:      initBoxes(),
 	}
+}
+
+type Box struct {
+	Id     int
+	Player int
+}
+
+func NewBox(i int) Box {
+	return Box{Id: i, Player: 0}
+}
+
+func initBoxes() [9]Box {
+	return [9]Box(append(make([]Box, 0), NewBox(0), NewBox(1), NewBox(2), NewBox(3), NewBox(4),
+		NewBox(5), NewBox(6), NewBox(7), NewBox(8)))
 }
 
 func (g *Game) updateState() {
@@ -30,13 +46,15 @@ func (g *Game) updateState() {
 
 	data := struct {
 		Count int
+		Boxes [9]Box
 	}{
 		Count: len(g.Players),
+		Boxes: g.Boxes,
 	}
 
 	var buf bytes.Buffer
 
-	err = t.ExecuteTemplate(&buf, "counter", data)
+	err = t.ExecuteTemplate(&buf, "boxes", data)
 	if err != nil {
 		log.Println(err)
 		return
@@ -63,15 +81,15 @@ func (g *Game) Run() {
 					log.Fatal(err)
 				}
 
-                data := struct {
-                    Error string
-                }{
-                    Error: "Game is full",
-                }
+				data := struct {
+					Error string
+				}{
+					Error: "Game is full",
+				}
 
 				var buf bytes.Buffer
 				err = t.ExecuteTemplate(&buf, "disconnected-game", nil)
-                err = t.ExecuteTemplate(&buf, "game-err", data)
+				err = t.ExecuteTemplate(&buf, "game-err", data)
 				if err != nil {
 					log.Fatal(err)
 				}

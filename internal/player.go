@@ -28,6 +28,7 @@ const (
 const (
 	Unknown int = iota
 	Close
+	Select
 )
 
 var (
@@ -43,6 +44,12 @@ type Player struct {
 
 type ClientMessage struct {
 	Type int
+}
+
+type SelectMessage struct {
+	Type   int
+	Box    int
+	Player int
 }
 
 func (p *Player) ReadMessages() {
@@ -70,7 +77,6 @@ readLoop:
 		var msg ClientMessage
 
 		err = json.Unmarshal(msgBytes, &msg)
-
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -79,6 +85,38 @@ readLoop:
 		default:
 		case Unknown:
 			p.Send <- []byte("unknown type")
+		case Select:
+			var s SelectMessage
+			err = json.Unmarshal(msgBytes, &s)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			p.Game.Boxes[s.Box].Player = s.Box + 1
+
+			t, err := template.ParseFiles("../views/index.html")
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			data := struct {
+				Id     int
+				Player int
+			}{
+				Id:     s.Box,
+				Player: p.Game.Boxes[s.Box].Player,
+			}
+
+			var buf bytes.Buffer
+
+			err = t.ExecuteTemplate(&buf, "box", data)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			b := buf.Bytes()
+			p.Game.Broadcast <- b
 		case Close:
 			t, err := template.ParseFiles("../views/index.html")
 			if err != nil {
@@ -87,8 +125,10 @@ readLoop:
 
 			data := struct {
 				Count int
+				Boxes [9]Box
 			}{
 				Count: len(p.Game.Players),
+				Boxes: p.Game.Boxes,
 			}
 
 			var buf bytes.Buffer

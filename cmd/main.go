@@ -29,13 +29,16 @@ func connectGame(game *tictacgo.Game, res http.ResponseWriter, req *http.Request
 
 	game.Register <- player
 
-    go player.ReadMessages()
-    go player.WriteMessages()
+	go player.ReadMessages()
+	go player.WriteMessages()
 }
 
 func main() {
 	game := tictacgo.NewGame()
 	go game.Run()
+
+	fs := http.FileServer(http.Dir("../css/"))
+	http.Handle("/css/*", http.StripPrefix("/css/", fs))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		t, err := template.ParseFiles("../views/index.html")
@@ -59,7 +62,15 @@ func main() {
 			log.Fatal(err)
 		}
 
-		err = t.ExecuteTemplate(w, "connected-game", nil)
+		data := struct {
+			Count int
+			Boxes [9]tictacgo.Box
+		}{
+			Count: len(game.Players),
+			Boxes: game.Boxes,
+		}
+
+		err = t.ExecuteTemplate(w, "connected-game", data)
 		err = t.ExecuteTemplate(w, "game-err", nil)
 		if err != nil {
 			log.Fatal(err)

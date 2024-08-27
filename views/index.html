@@ -3,6 +3,7 @@
 <html lang='en'>
     <script src='https://unpkg.com/htmx.org@2.0.2' integrity='sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ' crossorigin='anonymous'></script>
     <script src='https://unpkg.com/htmx-ext-ws@2.0.1/ws.js'></script>
+    <link rel="stylesheet" href="/css/index.css">
     <body>
         Hello
         <br>
@@ -24,12 +25,7 @@
 {{ end }}
 
 {{ block "disconnect" .}}
-<button
-    id='connect'
-    hx-trigger='mousedown'
-    hx-vals='{"type": 1}'
-    ws-send
-    >
+<button id='connect' hx-trigger='mousedown' hx-vals='{"type": 1}' ws-send >
     Disconnect
 </button>
 {{ end }}
@@ -44,6 +40,22 @@
 <div id='game' hx-ext='ws' ws-connect='/game' hx-swap-oob='true'>
     {{ template "counter" .}}
     {{ template "disconnect" .}}
+    {{ template "boxes" .}}
+    <br>
+</div>
+{{ end }}
+
+{{ block "boxes" . }}
+<div id='game-grid' class='grid-3-3'>
+    {{ range .Boxes }}
+        {{ template "box" . }}
+    {{ end }}
+</div>
+{{ end }}
+
+{{ block "box" .}}
+<div id='g{{.Id}}' class='box' hx-trigger='mousedown' hx-vals='{"type": 2, "box": {{.Id}}, "player": 1}' ws-send>
+    {{.Player}}
 </div>
 {{ end }}
 
