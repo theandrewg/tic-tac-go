@@ -40,6 +40,7 @@ type Player struct {
 	Game *Game
 	Conn *websocket.Conn
 	Send chan []byte
+	Id   int
 }
 
 type ClientMessage struct {
@@ -104,7 +105,7 @@ readLoop:
 				Player int
 			}{
 				Id:     s.Box,
-				Player: p.Game.Boxes[s.Box].Player,
+				Player: p.Id,
 			}
 
 			var buf bytes.Buffer

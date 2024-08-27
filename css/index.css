@@ -17,3 +17,11 @@
     font-size: 250%;
     text-align: center;
 }
+
+.box.player-1 {
+    background-color: blue;
+}
+
+.box.player-2 {
+    background-color: green;
+}

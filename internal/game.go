@@ -98,6 +98,7 @@ func (g *Game) Run() {
 				close(p.Send)
 			} else {
 				g.Players[p] = true
+                p.Id = len(g.Players)
 				g.updateState()
 			}
 
