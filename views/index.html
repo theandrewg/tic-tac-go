@@ -24,12 +24,6 @@
 </button>
 {{ end }}
 
-{{ block "disconnect" .}}
-<button id='connect' hx-trigger='mousedown' hx-vals='{"type": 1}' ws-send >
-    Disconnect
-</button>
-{{ end }}
-
 {{ block "disconnected-game" .}}
 <div id='game'>
     {{ template "connect" .}}
@@ -38,15 +32,35 @@
 
 {{ block "connected-game" .}}
 <div id='game' hx-ext='ws' ws-connect='/game' hx-swap-oob='true'>
-    {{ template "counter" .}}
     {{ template "disconnect" .}}
     {{ template "boxes" .}}
+    {{ template "players" .}}
     <br>
 </div>
 {{ end }}
 
+{{ block "disconnect" .}}
+<button id='connect' hx-trigger='mousedown' hx-vals='{"type": 1}' ws-send hx-swap-oob='true'>
+    Disconnect
+</button>
+{{ end }}
+
+{{ block "players" . }}
+<div id='players' hx-swap-oob='true'>
+    {{ range . }}
+        {{ template "player" . }}
+    {{ end }}
+</div>
+{{ end }}
+
+{{ block "player" . }}
+<div id='players-{{.Id}}'>
+    <span>Player {{.Id}} Connected</span>
+</div>
+{{ end }}
+
 {{ block "boxes" . }}
-<div id='game-grid' class='grid-3-3'>
+<div id='game-grid' class='grid-3-3' hx-swap-oob='true'>
     {{ range .Boxes }}
         {{ template "box" . }}
     {{ end }}
@@ -55,12 +69,6 @@
 
 {{ block "box" .}}
 <div id='box-{{.Id}}' class='box{{if .Player}} player-{{.Player}}{{end}}' {{if .Player }}{{else}}hx-trigger='mousedown' hx-vals='{"type": 2, "box": {{.Id}}, "player": 1}' ws-send{{end}} >
-</div>
-{{ end }}
-
-{{ block "counter" .}}
-<div id='counter' hx-swap-oob='true'>
-    {{.Count}}
 </div>
 {{ end }}
 

@@ -12,6 +12,12 @@ type Game struct {
 	Register   chan *Player
 	Unregister chan *Player
 	Boxes      [9]Box
+	Turn       int
+}
+
+type Box struct {
+	Id     int
+	Player int
 }
 
 func NewGame() *Game {
@@ -21,24 +27,26 @@ func NewGame() *Game {
 		Register:   make(chan *Player),
 		Unregister: make(chan *Player),
 		Boxes:      initBoxes(),
+		Turn:       0,
 	}
 }
 
-type Box struct {
-	Id     int
-	Player int
-}
-
-func NewBox(i int) Box {
-	return Box{Id: i, Player: 0}
-}
-
 func initBoxes() [9]Box {
-	return [9]Box(append(make([]Box, 0), NewBox(0), NewBox(1), NewBox(2), NewBox(3), NewBox(4),
-		NewBox(5), NewBox(6), NewBox(7), NewBox(8)))
+	boxes := make([]Box, 0)
+	for i := 0; i < 9; i++ {
+		boxes = append(boxes, Box{i, 0})
+	}
+	return [9]Box(boxes)
+}
+
+func (g *Game) finished() bool {
+	return false
 }
 
 func (g *Game) updateState() {
+	if len(g.Players) == 2 && g.Turn == 0 {
+		g.Turn = 1
+	}
 	t, err := template.ParseFiles("../views/index.html")
 	if err != nil {
 		log.Fatal(err)
@@ -53,6 +61,17 @@ func (g *Game) updateState() {
 	}
 
 	var buf bytes.Buffer
+
+	players := make([]Player, 0)
+	for p := range g.Players {
+		players = append(players, *p)
+	}
+
+	err = t.ExecuteTemplate(&buf, "players", players)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	err = t.ExecuteTemplate(&buf, "boxes", data)
 	if err != nil {
@@ -74,12 +93,16 @@ func (g *Game) Run() {
 			if p == nil {
 				log.Panic("unable to register nil player")
 			}
+
+            t, err := template.ParseFiles("../views/index.html")
+            if err != nil {
+                log.Fatal(err)
+            }
+
+            var buf bytes.Buffer
+
 			if len(g.Players) >= 2 {
 				// only two players are allowed to register
-				t, err := template.ParseFiles("../views/index.html")
-				if err != nil {
-					log.Fatal(err)
-				}
 
 				data := struct {
 					Error string
@@ -87,7 +110,6 @@ func (g *Game) Run() {
 					Error: "Game is full",
 				}
 
-				var buf bytes.Buffer
 				err = t.ExecuteTemplate(&buf, "disconnected-game", nil)
 				err = t.ExecuteTemplate(&buf, "game-err", data)
 				if err != nil {
@@ -96,11 +118,20 @@ func (g *Game) Run() {
 				p.Send <- buf.Bytes()
 
 				close(p.Send)
-			} else {
-				g.Players[p] = true
-                p.Id = len(g.Players)
-				g.updateState()
+				break
 			}
+
+			// register the player
+			g.Players[p] = true
+			p.Id = len(g.Players)
+
+            err = t.ExecuteTemplate(&buf, "disconnect", nil)
+			if err != nil {
+				log.Fatal(err)
+			}
+			p.Send <- buf.Bytes()
+
+			g.updateState()
 
 		// unregister a player
 		case p := <-g.Unregister:

@@ -87,13 +87,27 @@ readLoop:
 		case Unknown:
 			p.Send <- []byte("unknown type")
 		case Select:
+			if p.Id != p.Game.Turn {
+				break
+			}
+
+			if p.Game.Turn == 1 {
+				p.Game.Turn = 2
+			} else {
+				p.Game.Turn = 1
+			}
+
 			var s SelectMessage
 			err = json.Unmarshal(msgBytes, &s)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			p.Game.Boxes[s.Box].Player = p.Game.Boxes[s.Box].Player + 1
+			p.Game.Boxes[s.Box].Id = p.Id
+
+			if p.Game.finished() {
+				break
+			}
 
 			t, err := template.ParseFiles("../views/index.html")
 			if err != nil {
