@@ -133,6 +133,7 @@ readLoop:
 			b := buf.Bytes()
 			p.Game.Broadcast <- b
 		case Close:
+            p.Game.Boxes = initBoxes()
 			t, err := template.ParseFiles("../views/index.html")
 			if err != nil {
 				log.Fatal(err)
