@@ -33,9 +33,9 @@
 {{ block "connected-game" .}}
 <div id='game' hx-ext='ws' ws-connect='/game' hx-swap-oob='true'>
     {{ template "disconnect" .}}
+    <br>
     {{ template "boxes" .}}
     {{ template "players" .}}
-    <br>
 </div>
 {{ end }}
 

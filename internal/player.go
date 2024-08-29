@@ -139,11 +139,11 @@ readLoop:
 			}
 
 			data := struct {
-				Count int
-				Boxes [9]Box
+				Players int
+				Error   string
 			}{
-				Count: len(p.Game.Players),
-				Boxes: p.Game.Boxes,
+				Players: 0,
+				Error:   "",
 			}
 
 			var buf bytes.Buffer
@@ -155,7 +155,11 @@ readLoop:
 			}
 
 			b := buf.Bytes()
-			p.Send <- b
+            for player := range p.Game.Players {
+                delete(player.Game.Players, player)
+                player.Send <- b
+                player.Game.Unregister <- player
+            }
 			break readLoop
 		}
 	}

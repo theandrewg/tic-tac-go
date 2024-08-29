@@ -46,7 +46,15 @@ func main() {
 			log.Fatal(err)
 		}
 
-		err = t.ExecuteTemplate(w, "index", nil)
+		data := struct {
+			Players int
+			Error   string
+		}{
+			Players: len(game.Players),
+            Error: "",
+		}
+
+		err = t.ExecuteTemplate(w, "index", data)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -62,15 +70,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		data := struct {
-			Count int
-			Boxes [9]tictacgo.Box
-		}{
-			Count: len(game.Players),
-			Boxes: game.Boxes,
-		}
-
-		err = t.ExecuteTemplate(w, "connected-game", data)
+		err = t.ExecuteTemplate(w, "connected-game", nil)
 		err = t.ExecuteTemplate(w, "game-err", nil)
 		if err != nil {
 			log.Fatal(err)
