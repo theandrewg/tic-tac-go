@@ -51,7 +51,7 @@ func main() {
 			Error   string
 		}{
 			Players: len(game.Players),
-            Error: "",
+			Error:   "",
 		}
 
 		err = t.ExecuteTemplate(w, "index", data)

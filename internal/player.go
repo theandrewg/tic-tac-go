@@ -29,6 +29,7 @@ const (
 	Unknown int = iota
 	Close
 	Select
+	Reset
 )
 
 var (
@@ -103,7 +104,10 @@ readLoop:
 				log.Fatal(err)
 			}
 
-			p.Game.Boxes[s.Box].Id = p.Id
+            // only update the box if it is 0 to stop players overwriting a previous box
+            if p.Game.Boxes[s.Box].Id == 0 {
+                p.Game.Boxes[s.Box].Id = p.Id
+            }
 
 			if p.Game.finished() {
 				break
@@ -133,7 +137,7 @@ readLoop:
 			b := buf.Bytes()
 			p.Game.Broadcast <- b
 		case Close:
-            p.Game.Boxes = initBoxes()
+			p.Game.Boxes = initBoxes()
 			t, err := template.ParseFiles("../views/index.html")
 			if err != nil {
 				log.Fatal(err)
@@ -156,12 +160,19 @@ readLoop:
 			}
 
 			b := buf.Bytes()
-            for player := range p.Game.Players {
-                delete(player.Game.Players, player)
-                player.Send <- b
-                player.Game.Unregister <- player
-            }
+			for player := range p.Game.Players {
+				delete(player.Game.Players, player)
+				player.Send <- b
+				player.Game.Unregister <- player
+			}
 			break readLoop
+		case Reset:
+			p.Game.Boxes = initBoxes()
+			if p.Game.Turn == 1 {
+				p.Game.Turn = 2
+			} else {
+				p.Game.Turn = 1
+			}
 		}
 	}
 }

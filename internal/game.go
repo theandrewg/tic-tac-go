@@ -94,12 +94,12 @@ func (g *Game) Run() {
 				log.Panic("unable to register nil player")
 			}
 
-            t, err := template.ParseFiles("../views/index.html")
-            if err != nil {
-                log.Fatal(err)
-            }
+			t, err := template.ParseFiles("../views/index.html")
+			if err != nil {
+				log.Fatal(err)
+			}
 
-            var buf bytes.Buffer
+			var buf bytes.Buffer
 
 			if len(g.Players) >= 2 {
 				// only two players are allowed to register
@@ -125,7 +125,7 @@ func (g *Game) Run() {
 			g.Players[p] = true
 			p.Id = len(g.Players)
 
-            err = t.ExecuteTemplate(&buf, "disconnect", nil)
+			err = t.ExecuteTemplate(&buf, "disconnect", nil)
 			if err != nil {
 				log.Fatal(err)
 			}
