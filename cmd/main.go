@@ -5,33 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gorilla/websocket"
-	"github.com/theandrewg/tic-tac-go/internal"
+	tictacgo "github.com/theandrewg/tic-tac-go/internal"
 )
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
-
-func connectGame(game *tictacgo.Game, res http.ResponseWriter, req *http.Request) {
-	conn, err := upgrader.Upgrade(res, req, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	player := &tictacgo.Player{
-		Game: game,
-		Conn: conn,
-		Send: make(chan []byte, 256),
-	}
-
-	game.Register <- player
-
-	go player.ReadMessages()
-	go player.WriteMessages()
-}
 
 func main() {
 	game := tictacgo.NewGame()
@@ -61,7 +36,7 @@ func main() {
 	})
 
 	http.HandleFunc("/game", func(w http.ResponseWriter, req *http.Request) {
-		connectGame(game, w, req)
+		game.Connect(w, req)
 	})
 
 	http.HandleFunc("/connect", func(w http.ResponseWriter, req *http.Request) {

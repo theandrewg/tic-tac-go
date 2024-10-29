@@ -3,6 +3,7 @@ package tictacgo
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"time"
@@ -88,7 +89,7 @@ readLoop:
 		case Unknown:
 			p.Send <- []byte("unknown type")
 		case Select:
-			if p.Id != p.Game.Turn {
+			if p.Id != p.Game.Turn || p.Game.Winner != 0 {
 				break
 			}
 
@@ -104,14 +105,7 @@ readLoop:
 				log.Fatal(err)
 			}
 
-            // only update the box if it is 0 to stop players overwriting a previous box
-            if p.Game.Boxes[s.Box].Id == 0 {
-                p.Game.Boxes[s.Box].Id = p.Id
-            }
-
-			if p.Game.finished() {
-				break
-			}
+			winner := p.Game.selectBox(s.Box, p.Id)
 
 			t, err := template.ParseFiles("../views/index.html")
 			if err != nil {
@@ -134,8 +128,17 @@ readLoop:
 				return
 			}
 
+			if winner != 0 {
+				err = t.ExecuteTemplate(&buf, "winner", fmt.Sprintf("Player %d wins!", winner))
+				if err != nil {
+					log.Println(err)
+					return
+				}
+			}
+
 			b := buf.Bytes()
 			p.Game.Broadcast <- b
+
 		case Close:
 			p.Game.Boxes = initBoxes()
 			t, err := template.ParseFiles("../views/index.html")

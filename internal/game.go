@@ -2,9 +2,18 @@ package tictacgo
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"log"
+	"net/http"
+
+	"github.com/gorilla/websocket"
 )
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
 type Game struct {
 	Players    map[*Player]bool
@@ -13,6 +22,7 @@ type Game struct {
 	Unregister chan *Player
 	Boxes      [9]Box
 	Turn       int
+	Winner     int
 }
 
 type Box struct {
@@ -28,6 +38,7 @@ func NewGame() *Game {
 		Unregister: make(chan *Player),
 		Boxes:      initBoxes(),
 		Turn:       0,
+		Winner:     0,
 	}
 }
 
@@ -39,8 +50,71 @@ func initBoxes() [9]Box {
 	return [9]Box(boxes)
 }
 
-func (g *Game) finished() bool {
-	return false
+func (g *Game) Connect(res http.ResponseWriter, req *http.Request) {
+	conn, err := upgrader.Upgrade(res, req, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	player := &Player{
+		Game: g,
+		Conn: conn,
+		Send: make(chan []byte, 256),
+	}
+
+	g.Register <- player
+
+	go player.ReadMessages()
+	go player.WriteMessages()
+}
+
+func (g *Game) selectBox(i int, p int) int {
+	// only update the box if it is 0 to stop players overwriting a previous box
+	if g.Boxes[i].Player == 0 {
+		g.Boxes[i].Player = p
+	}
+
+	winner := g.finished()
+
+	if winner != 0 {
+		fmt.Printf("Player %d wins!\n", winner)
+        g.Winner = winner
+		return winner
+	}
+
+	return 0
+}
+
+func (g *Game) finished() int {
+	lines := [][]int{
+		// rows
+		{0, 1, 2},
+		{3, 4, 5},
+		{6, 7, 8},
+		// columns
+		{0, 3, 6},
+		{1, 4, 7},
+		{2, 5, 8},
+		// diagonals
+		{0, 4, 8},
+		{2, 4, 6},
+	}
+
+	players := []int{1, 2}
+
+	for _, line := range lines {
+		a := line[0]
+		b := line[1]
+		c := line[2]
+
+		for _, player := range players {
+			if g.Boxes[a].Player == player && g.Boxes[b].Player == player && g.Boxes[c].Player == player {
+				return player
+			}
+		}
+	}
+	return 0
 }
 
 func (g *Game) updateState() {
