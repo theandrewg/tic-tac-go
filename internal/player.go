@@ -93,12 +93,6 @@ readLoop:
 				break
 			}
 
-			if p.Game.Turn == 1 {
-				p.Game.Turn = 2
-			} else {
-				p.Game.Turn = 1
-			}
-
 			var s SelectMessage
 			err = json.Unmarshal(msgBytes, &s)
 			if err != nil {
@@ -138,7 +132,6 @@ readLoop:
 
 			b := buf.Bytes()
 			p.Game.Broadcast <- b
-
 		case Close:
 			p.Game.Boxes = initBoxes()
 			t, err := template.ParseFiles("../views/index.html")
@@ -170,12 +163,34 @@ readLoop:
 			}
 			break readLoop
 		case Reset:
-			p.Game.Boxes = initBoxes()
-			if p.Game.Turn == 1 {
-				p.Game.Turn = 2
-			} else {
-				p.Game.Turn = 1
+			p.Game.reset()
+
+			t, err := template.ParseFiles("../views/index.html")
+			if err != nil {
+				log.Fatal(err)
 			}
+
+			data := struct {
+				Count int
+				Boxes [9]Box
+			}{
+				Count: len(p.Game.Players),
+				Boxes: p.Game.Boxes,
+			}
+
+			var buf bytes.Buffer
+			err = t.ExecuteTemplate(&buf, "boxes", data)
+			err = t.ExecuteTemplate(&buf, "winner", "")
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			b := buf.Bytes()
+			// for p := range p.Game.Players {
+			// 	p.Send <- b
+			// }
+			p.Game.Broadcast <- b
 		}
 	}
 }

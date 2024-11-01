@@ -6,7 +6,7 @@
     grid-template-rows: auto auto auto;
     grid-gap: 10px;
     padding: 10px;
-    background-color: red;
+    background-color: #d3d3d3;
 }
 
 .box {

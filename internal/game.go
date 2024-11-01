@@ -69,6 +69,13 @@ func (g *Game) Connect(res http.ResponseWriter, req *http.Request) {
 	go player.WriteMessages()
 }
 
+func (g *Game) reset() {
+	// reset game
+	g.Boxes = initBoxes()
+	g.Winner = 0
+	return
+}
+
 func (g *Game) selectBox(i int, p int) int {
 	// only update the box if it is 0 to stop players overwriting a previous box
 	if g.Boxes[i].Player == 0 {
@@ -77,9 +84,15 @@ func (g *Game) selectBox(i int, p int) int {
 
 	winner := g.finished()
 
+    if g.Turn == 1 {
+        g.Turn = 2
+    } else {
+        g.Turn = 1
+    }
+
 	if winner != 0 {
 		fmt.Printf("Player %d wins!\n", winner)
-        g.Winner = winner
+		g.Winner = winner
 		return winner
 	}
 

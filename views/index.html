@@ -33,6 +33,8 @@
 {{ block "connected-game" .}}
 <div id='game' hx-ext='ws' ws-connect='/game' hx-swap-oob='true'>
     {{ template "disconnect" .}}
+    {{ template "reset" . }}
+    <br>
     {{ template "winner" .}}
     <br>
     {{ template "boxes" .}}
@@ -42,6 +44,12 @@
 
 {{ block "winner" .}}
     <span id='winner'>{{ . }}</span>
+{{ end }}
+
+{{ block "reset" .}}
+<button id='reset' hx-trigger='mousedown' hx-vals='{"type": 3}' ws-send hx-swap-oob='true'>
+    Reset
+</button>
 {{ end }}
 
 {{ block "disconnect" .}}
